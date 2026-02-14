@@ -88,6 +88,12 @@ export class KlaviyoAuth {
     // ------------------------------------------------------------------
     // Fresh login: visible browser, user solves CAPTCHA
     // ------------------------------------------------------------------
+
+    // On production (no display), skip login — can't solve CAPTCHA on a server
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('No saved session available. Run the tool locally first to log in and create a session, then redeploy.');
+    }
+
     this.log.info('Opening visible browser for login (reCAPTCHA requires manual solve)...');
     this.log.info('>>> Please solve the CAPTCHA in the browser window, then login will complete automatically. <<<');
 
