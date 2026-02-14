@@ -47,6 +47,18 @@ app.use(express.json());
 const publicDir = path.join(__dirname, '..', 'public');
 app.use(express.static(publicDir));
 
+// ---------------------------------------------------------------------------
+// API Key Resolution — from request header or env fallback
+// ---------------------------------------------------------------------------
+
+/**
+ * Get the Klaviyo API key from the request header (user-provided) or env fallback.
+ * Header: x-klaviyo-api-key
+ */
+function getApiKey(req: express.Request): string {
+  return (req.headers['x-klaviyo-api-key'] as string) || process.env.KLAVIYO_API_KEY || '';
+}
+
 // Store active SSE connections for log streaming
 const sseClients: Map<string, express.Response> = new Map();
 
@@ -72,6 +84,37 @@ class SSETransport extends Transport {
     callback();
   }
 }
+
+// ---------------------------------------------------------------------------
+// Connect — validate a user's API key
+// ---------------------------------------------------------------------------
+
+/**
+ * Test a Klaviyo API key. Returns account info if valid.
+ * The UI calls this when the user enters their key.
+ */
+app.post('/api/connect', async (req, res) => {
+  const apiKey = req.body.apiKey || getApiKey(req);
+  if (!apiKey) {
+    return res.status(400).json({ success: false, error: 'No API key provided.' });
+  }
+
+  try {
+    const config = loadConfig({ mode: 'api' as BuildMode });
+    config.apiKey = apiKey;
+    const client = new KlaviyoAPIClient(config);
+    const connected = await client.testConnection();
+
+    if (connected) {
+      res.json({ success: true, message: 'Connected to Klaviyo successfully.' });
+    } else {
+      res.status(401).json({ success: false, error: 'Invalid API key. Check your key and try again.' });
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ success: false, error: 'Connection failed: ' + msg });
+  }
+});
 
 // ---------------------------------------------------------------------------
 // API Endpoints
@@ -113,11 +156,14 @@ app.get('/api/flows/:filename', (req, res) => {
 
 // Start a flow build
 app.post('/api/build', async (req, res) => {
-  const { flowFile, mode = 'api', settingsOverrides, definition: rawDefinition } = req.body;
+  const { flowFile, mode = 'api', settingsOverrides, definition: rawDefinition, apiKey: bodyApiKey } = req.body;
 
   if (!flowFile && !rawDefinition) {
     return res.status(400).json({ error: 'flowFile or definition is required' });
   }
+
+  // Resolve API key: body > header > env
+  const userApiKey = bodyApiKey || getApiKey(req);
 
   // Generate a build ID for this run
   const buildId = `build-${Date.now()}`;
@@ -133,10 +179,8 @@ app.post('/api/build', async (req, res) => {
       let definition: FlowDefinition;
 
       if (rawDefinition) {
-        // Custom flow built in the UI
         definition = rawDefinition as FlowDefinition;
       } else {
-        // Template-based flow from file
         const flowPath = path.join(__dirname, '..', 'flows', flowFile);
         if (!fs.existsSync(flowPath)) {
           sendSSE(buildId, 'error', { message: `Flow file not found: ${flowFile}` });
@@ -147,6 +191,11 @@ app.post('/api/build', async (req, res) => {
       }
 
       const config = loadConfig({ mode: mode as BuildMode });
+
+      // Use the user-provided API key if available
+      if (userApiKey) {
+        config.apiKey = userApiKey;
+      }
 
       // Apply UI settings overrides
       if (settingsOverrides) {
@@ -431,12 +480,14 @@ app.post('/api/upload-image', upload.single('image'), async (req, res) => {
   }
 
   try {
-    // Load config to get the API key
+    // Get API key from header or env
     const config = loadConfig({ mode: 'api' as BuildMode });
+    const userApiKey = getApiKey(req);
+    if (userApiKey) config.apiKey = userApiKey;
+
     if (!config.apiKey) {
-      // Clean up the temp file
       fs.unlinkSync(file.path);
-      return res.status(400).json({ success: false, error: 'KLAVIYO_API_KEY not set in .env. Cannot upload to Klaviyo.' });
+      return res.status(400).json({ success: false, error: 'No API key. Connect your Klaviyo account first.' });
     }
 
     const client = new KlaviyoAPIClient(config);

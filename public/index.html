@@ -146,6 +146,27 @@
     .color-field { display: flex; align-items: center; gap: 6px; }
     .color-preview { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #2a2b35; flex-shrink: 0; }
 
+    /* Login Screen */
+    .login-screen { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); padding: 24px; }
+    .login-card { background: #1a1b23; border: 1px solid #2a2b35; border-radius: 16px; padding: 40px; max-width: 440px; width: 100%; text-align: center; }
+    .login-card .logo-icon { font-size: 40px; margin-bottom: 16px; }
+    .login-card h2 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .login-card .subtitle { font-size: 14px; color: #71717a; margin-bottom: 28px; line-height: 1.5; }
+    .login-card label { text-align: left; font-size: 12px; font-weight: 600; color: #a1a1aa; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .login-card input[type="text"] { width: 100%; padding: 12px 14px; background: #0f1117; border: 1px solid #2a2b35; border-radius: 8px; color: #e4e4e7; font-size: 14px; font-family: 'Consolas', monospace; outline: none; margin-bottom: 8px; }
+    .login-card input[type="text"]:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+    .login-card input[type="text"]::placeholder { color: #3a3b45; font-family: -apple-system, sans-serif; }
+    .login-error { font-size: 12px; color: #ef4444; margin-bottom: 12px; display: none; padding: 8px 12px; background: #1a0a0a; border: 1px solid #ef444422; border-radius: 6px; }
+    .login-error.show { display: block; }
+    .login-hint { font-size: 11px; color: #3a3b45; margin-bottom: 20px; text-align: left; line-height: 1.5; }
+    .login-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; transition: all 0.25s ease; box-shadow: 0 2px 12px rgba(99,102,241,0.3); }
+    .login-btn:hover { background: linear-gradient(135deg, #4f46e5, #4338ca); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(99,102,241,0.4); }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+    .login-btn .spin { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
+    .login-secure { font-size: 11px; color: #2a2b35; margin-top: 16px; }
+    .connected-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #0a1a0a; border: 1px solid #22c55e33; color: #22c55e; cursor: pointer; margin-left: auto; }
+    .connected-badge:hover { background: #1a0a0a; border-color: #ef444433; color: #ef4444; }
+
     /* Upload dropzone */
     .upload-dropzone { border: 2px dashed #2a2b35; border-radius: 10px; padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.25s ease; background: #0a0a0f; }
     .upload-dropzone:hover { border-color: #6366f1; background: #0f1020; }
@@ -160,9 +181,26 @@
   <div class="header">
     <h1>Klaviyo Flow Builder</h1>
     <span class="badge">ZHS Ecom</span>
+    <span id="connectedBadge" class="connected-badge" style="display:none" onclick="disconnect()">Connected &mdash; Disconnect</span>
   </div>
 
-  <div class="layout">
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-card">
+      <div class="logo-icon">&#9889;</div>
+      <h2>Connect Your Klaviyo Account</h2>
+      <p class="subtitle">Paste your Private API Key to start building flows. Your key stays in your browser only.</p>
+      <label>Klaviyo Private API Key</label>
+      <input type="text" id="apiKeyInput" placeholder="pk_xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false" />
+      <div class="login-hint">Find it at: Klaviyo &rarr; Settings &rarr; API Keys &rarr; Private API Keys</div>
+      <div id="loginError" class="login-error"></div>
+      <button id="loginBtn" class="login-btn" onclick="connectAccount()">Connect</button>
+      <div class="login-secure">Your API key is stored in your browser only and sent securely over HTTPS.</div>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until connected) -->
+  <div id="mainApp" class="layout" style="display:none">
     <div>
       <!-- Flow Info -->
       <div class="card">
@@ -270,16 +308,101 @@ let eventSource = null;
 let flowDef = null;
 let activeEmailTab = null;
 
-// ── Load the flow definition ──
-async function init() {
+// ── API Key Management ──
+function getStoredApiKey() {
+  return localStorage.getItem('klaviyo_api_key') || '';
+}
+
+function setStoredApiKey(key) {
+  localStorage.setItem('klaviyo_api_key', key);
+}
+
+function clearStoredApiKey() {
+  localStorage.removeItem('klaviyo_api_key');
+}
+
+async function connectAccount() {
+  var key = document.getElementById('apiKeyInput').value.trim();
+  var errorEl = document.getElementById('loginError');
+  var btn = document.getElementById('loginBtn');
+
+  if (!key) {
+    errorEl.textContent = 'Please enter your API key.';
+    errorEl.className = 'login-error show';
+    return;
+  }
+
+  if (!key.startsWith('pk_')) {
+    errorEl.textContent = 'API key should start with "pk_". Make sure you\'re using a Private API Key.';
+    errorEl.className = 'login-error show';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Connecting...';
+  errorEl.className = 'login-error';
+
   try {
-    const res = await fetch('/api/flows/' + FLOW_FILE);
+    var res = await fetch('/api/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey: key }),
+    });
+    var data = await res.json();
+
+    if (data.success) {
+      setStoredApiKey(key);
+      showApp();
+    } else {
+      errorEl.textContent = data.error || 'Connection failed.';
+      errorEl.className = 'login-error show';
+    }
+  } catch (err) {
+    errorEl.textContent = 'Connection failed: ' + err.message;
+    errorEl.className = 'login-error show';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Connect';
+}
+
+function disconnect() {
+  clearStoredApiKey();
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+  document.getElementById('connectedBadge').style.display = 'none';
+  document.getElementById('apiKeyInput').value = '';
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'grid';
+  document.getElementById('connectedBadge').style.display = 'inline-flex';
+  loadFlowDef();
+}
+
+// ── Load the flow definition ──
+async function loadFlowDef() {
+  try {
+    var res = await fetch('/api/flows/' + FLOW_FILE);
     flowDef = await res.json();
     rebuildTable();
     rebuildEmailTabs();
   } catch (e) {
     log('error', 'Failed to load flow: ' + e.message);
   }
+}
+
+// ── Init — check for saved key ──
+function init() {
+  var savedKey = getStoredApiKey();
+  if (savedKey) {
+    showApp();
+  }
+  // Allow Enter key on login input
+  document.getElementById('apiKeyInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') connectAccount();
+  });
 }
 
 // ── Toggle helpers ──
@@ -641,6 +764,7 @@ async function handleFileSelect(emailId, idx, input) {
 
     const res = await fetch('/api/upload-image', {
       method: 'POST',
+      headers: { 'x-klaviyo-api-key': getStoredApiKey() },
       body: formData,
     });
 
@@ -766,12 +890,13 @@ async function startBuild() {
   try {
     const res = await fetch('/api/build', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-klaviyo-api-key': getStoredApiKey() },
       body: JSON.stringify({
         flowFile: FLOW_FILE,
         mode: 'api',
         settingsOverrides: collectOverrides(),
-        definition: flowDef
+        definition: flowDef,
+        apiKey: getStoredApiKey()
       }),
     });
     const { buildId } = await res.json();
