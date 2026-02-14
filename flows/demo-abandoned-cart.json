@@ -1,0 +1,56 @@
+{
+  "name": "Abandoned Cart — Demo",
+  "trigger": {
+    "type": "list",
+    "list_name": "Email List"
+  },
+  "settings": {
+    "smart_sending": true,
+    "utm_tracking": false
+  },
+  "entry_action_id": "delay-1",
+  "profile_filter": null,
+  "actions": [
+    {
+      "id": "delay-1",
+      "type": "time-delay",
+      "delay_value": 1,
+      "delay_unit": "days",
+      "next": "email-1"
+    },
+    {
+      "id": "email-1",
+      "type": "send-email",
+      "name": "Cart Reminder #1",
+      "subject_line": "You left something behind...",
+      "next": "delay-2"
+    },
+    {
+      "id": "delay-2",
+      "type": "time-delay",
+      "delay_value": 1,
+      "delay_unit": "days",
+      "next": "email-2"
+    },
+    {
+      "id": "email-2",
+      "type": "send-email",
+      "name": "Cart Reminder #2",
+      "subject_line": "Still thinking about it?",
+      "next": "delay-3"
+    },
+    {
+      "id": "delay-3",
+      "type": "time-delay",
+      "delay_value": 1,
+      "delay_unit": "days",
+      "next": "email-3"
+    },
+    {
+      "id": "email-3",
+      "type": "send-email",
+      "name": "Cart Reminder #3 — Final",
+      "subject_line": "Last chance!"
+    }
+  ]
+}

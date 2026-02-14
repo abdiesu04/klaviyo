@@ -1,0 +1,70 @@
+{
+  "name": "Post-Purchase Flow",
+  "trigger": {
+    "type": "list",
+    "list_name": "Email List"
+  },
+  "settings": {
+    "smart_sending": true,
+    "utm_tracking": true,
+    "reentry": { "mode": "multiple" }
+  },
+  "entry_action_id": "email-thanks",
+  "profile_filter": null,
+  "tags": ["automated", "post-purchase"],
+  "actions": [
+    {
+      "id": "email-thanks",
+      "type": "send-email",
+      "name": "Order Confirmation / Thank You",
+      "subject_line": "Thank you for your order!",
+      "preview_text": "Your order details inside",
+      "smart_sending": false,
+      "next": "delay-1"
+    },
+    {
+      "id": "delay-1",
+      "type": "time-delay",
+      "delay_value": 5,
+      "delay_unit": "days",
+      "next": "email-tips"
+    },
+    {
+      "id": "email-tips",
+      "type": "send-email",
+      "name": "Product Tips & How-To",
+      "subject_line": "Getting the most out of your purchase",
+      "preview_text": "Tips, tricks & how-to guides",
+      "next": "delay-2"
+    },
+    {
+      "id": "delay-2",
+      "type": "time-delay",
+      "delay_value": 7,
+      "delay_unit": "days",
+      "next": "email-review"
+    },
+    {
+      "id": "email-review",
+      "type": "send-email",
+      "name": "Review Request",
+      "subject_line": "How are you liking your purchase?",
+      "preview_text": "Leave a review & help others decide",
+      "next": "delay-3"
+    },
+    {
+      "id": "delay-3",
+      "type": "time-delay",
+      "delay_value": 14,
+      "delay_unit": "days",
+      "next": "email-cross-sell"
+    },
+    {
+      "id": "email-cross-sell",
+      "type": "send-email",
+      "name": "Cross-Sell / You Might Also Like",
+      "subject_line": "Picked just for you",
+      "preview_text": "Based on your recent purchase"
+    }
+  ]
+}

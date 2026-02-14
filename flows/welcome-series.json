@@ -1,0 +1,70 @@
+{
+  "name": "Welcome Series Flow",
+  "trigger": {
+    "type": "list",
+    "list_name": "Email List"
+  },
+  "settings": {
+    "smart_sending": true,
+    "utm_tracking": true,
+    "reentry": { "mode": "once" }
+  },
+  "entry_action_id": "email-welcome",
+  "profile_filter": null,
+  "tags": ["automated", "welcome-series"],
+  "actions": [
+    {
+      "id": "email-welcome",
+      "type": "send-email",
+      "name": "Welcome Email #1 — Brand Intro",
+      "subject_line": "Welcome to the family!",
+      "preview_text": "Here's what you can expect",
+      "smart_sending": false,
+      "next": "delay-1"
+    },
+    {
+      "id": "delay-1",
+      "type": "time-delay",
+      "delay_value": 2,
+      "delay_unit": "days",
+      "next": "email-2"
+    },
+    {
+      "id": "email-2",
+      "type": "send-email",
+      "name": "Welcome Email #2 — Best Sellers",
+      "subject_line": "Our customers' favorites",
+      "preview_text": "See what everyone's loving",
+      "next": "delay-2"
+    },
+    {
+      "id": "delay-2",
+      "type": "time-delay",
+      "delay_value": 2,
+      "delay_unit": "days",
+      "next": "split-purchased"
+    },
+    {
+      "id": "split-purchased",
+      "type": "conditional-split",
+      "condition_type": "has-opened-email",
+      "condition_label": "Has Opened Welcome Emails",
+      "next_if_true": "email-3-engaged",
+      "next_if_false": "email-3-disengaged"
+    },
+    {
+      "id": "email-3-engaged",
+      "type": "send-email",
+      "name": "Welcome Email #3 (Engaged) — Social Proof",
+      "subject_line": "See what our customers are saying",
+      "preview_text": "Real reviews from real people"
+    },
+    {
+      "id": "email-3-disengaged",
+      "type": "send-email",
+      "name": "Welcome Email #3 (Not Engaged) — Offer",
+      "subject_line": "Here's 10% off your first order",
+      "preview_text": "A welcome gift just for you"
+    }
+  ]
+}

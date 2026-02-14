@@ -1,0 +1,102 @@
+{
+  "name": "Abandoned Cart Flow (A/B Test)",
+  "trigger": {
+    "type": "list",
+    "list_name": "Email List"
+  },
+  "entry_action_id": "delay-1",
+  "profile_filter": null,
+  "tags": ["automated", "abandoned-cart", "ab-test"],
+  "actions": [
+    {
+      "id": "delay-1",
+      "type": "time-delay",
+      "delay_value": 1,
+      "delay_unit": "days",
+      "next": "ab-split-1"
+    },
+    {
+      "id": "ab-split-1",
+      "type": "ab-split",
+      "variant_a_label": "Urgency Subject",
+      "variant_b_label": "Friendly Subject",
+      "split_percentage": 50,
+      "next_variant_a": "email-1a",
+      "next_variant_b": "email-1b"
+    },
+    {
+      "id": "email-1a",
+      "type": "send-email",
+      "name": "Variant A — Urgency",
+      "subject_line": "Your cart expires in 24 hours!",
+      "preview_text": "Don't lose your items",
+      "next": "delay-2a"
+    },
+    {
+      "id": "email-1b",
+      "type": "send-email",
+      "name": "Variant B — Friendly",
+      "subject_line": "Hey, you left some great stuff behind!",
+      "preview_text": "We saved your cart for you",
+      "next": "delay-2b"
+    },
+    {
+      "id": "delay-2a",
+      "type": "time-delay",
+      "delay_value": 1,
+      "delay_unit": "days",
+      "next": "split-opened"
+    },
+    {
+      "id": "delay-2b",
+      "type": "time-delay",
+      "delay_value": 1,
+      "delay_unit": "days",
+      "next": "split-opened"
+    },
+    {
+      "id": "split-opened",
+      "type": "conditional-split",
+      "condition_type": "has-opened-email",
+      "condition_label": "Opened Previous Email",
+      "condition_config": {
+        "timeframe": {
+          "type": "relative",
+          "value": 2,
+          "unit": "days"
+        }
+      },
+      "next_if_true": "email-2-opened",
+      "next_if_false": "email-2-not-opened"
+    },
+    {
+      "id": "email-2-opened",
+      "type": "send-email",
+      "name": "Cart Reminder #2 (Opened)",
+      "subject_line": "Still thinking about it?",
+      "preview_text": "Complete your purchase"
+    },
+    {
+      "id": "email-2-not-opened",
+      "type": "send-email",
+      "name": "Cart Reminder #2 (Not Opened)",
+      "subject_line": "Don't miss out — limited stock!",
+      "preview_text": "Your items are selling fast",
+      "next": "delay-3"
+    },
+    {
+      "id": "delay-3",
+      "type": "time-delay",
+      "delay_value": 1,
+      "delay_unit": "days",
+      "next": "email-3"
+    },
+    {
+      "id": "email-3",
+      "type": "send-email",
+      "name": "Final Cart Reminder #3",
+      "subject_line": "Last chance — your cart expires today",
+      "preview_text": "Complete your purchase before it's too late"
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+# =============================================================================
+# Render Blueprint — Klaviyo Flow Builder
+# =============================================================================
+# Deploy: Connect your GitHub repo → Render auto-detects this file
+# =============================================================================
+
+services:
+  - type: web
+    name: klaviyo-flow-builder
+    runtime: docker
+    plan: starter  # $7/month — enough RAM for Sharp + Playwright
+    healthCheckPath: /
+    envVars:
+      - key: KLAVIYO_API_KEY
+        sync: false  # Set manually in Render dashboard
+      - key: KLAVIYO_API_REVISION
+        value: "2024-10-15.pre"
+      - key: KLAVIYO_EMAIL
+        sync: false  # Set manually
+      - key: KLAVIYO_PASSWORD
+        sync: false  # Set manually
+      - key: HEADLESS
+        value: "true"
+      - key: SLOW_MO
+        value: "0"
+      - key: LOG_LEVEL
+        value: "info"
+      - key: MAX_RETRIES
+        value: "3"
+      - key: PAGE_TIMEOUT
+        value: "60000"
+      - key: IMAGE_MAX_WIDTH
+        value: "1200"
+      - key: IMAGE_QUALITY
+        value: "82"
+      - key: NODE_ENV
+        value: "production"

@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klaviyo Flow Builder</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e4e4e7; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #1a1b23, #2a2b35); border-bottom: 1px solid #2a2b35; padding: 16px 32px; display: flex; align-items: center; gap: 12px; }
+    .header h1 { font-size: 18px; font-weight: 600; color: #fff; }
+    .header .badge { background: #22c55e; color: #000; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1400px; margin: 0 auto; padding: 24px; }
+    @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+    .card { background: #1a1b23; border: 1px solid #2a2b35; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+    .card h2 { font-size: 14px; font-weight: 600; color: #a1a1aa; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+    label { display: block; font-size: 13px; color: #a1a1aa; margin-bottom: 5px; }
+    select, input[type="number"], input[type="text"], input[type="url"] { width: 100%; padding: 8px 12px; background: #0f1117; border: 1px solid #2a2b35; border-radius: 6px; color: #e4e4e7; font-size: 13px; outline: none; }
+    select:focus, input:focus, textarea:focus { border-color: #6366f1; }
+    textarea { width: 100%; padding: 8px 12px; background: #0f1117; border: 1px solid #2a2b35; border-radius: 6px; color: #e4e4e7; font-size: 13px; outline: none; resize: vertical; font-family: inherit; }
+    .form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+    .form-row > * { flex: 1; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1f2029; }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 13px; color: #e4e4e7; }
+    .toggle-desc { font-size: 11px; color: #71717a; margin-top: 2px; }
+    .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider { position: absolute; inset: 0; background: #3a3b45; border-radius: 11px; transition: background 0.2s; }
+    .toggle .slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: transform 0.2s; }
+    .toggle input:checked + .slider { background: #6366f1; }
+    .toggle input:checked + .slider::before { transform: translateX(18px); }
+    .radio-group { display: flex; flex-direction: column; gap: 8px; }
+    .radio-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; background: #0f1117; border: 1px solid #2a2b35; border-radius: 8px; cursor: pointer; transition: border 0.2s; }
+    .radio-option:hover { border-color: #3a3b45; }
+    .radio-option.selected { border-color: #6366f1; background: #151620; }
+    .radio-option input[type="radio"] { margin-top: 2px; accent-color: #6366f1; }
+    .radio-option .radio-text { font-size: 13px; color: #e4e4e7; }
+    .radio-option .radio-desc { font-size: 11px; color: #71717a; margin-top: 2px; }
+    .radio-option .time-inputs { display: none; margin-top: 8px; gap: 8px; }
+    .radio-option.selected .time-inputs { display: flex; }
+    .time-inputs input, .time-inputs select { width: auto; flex: 1; }
+    .action-table { width: 100%; border-collapse: collapse; }
+    .action-table th { text-align: left; font-size: 11px; font-weight: 600; color: #71717a; padding: 6px 8px; border-bottom: 1px solid #2a2b35; text-transform: uppercase; }
+    .action-table td { padding: 8px; border-bottom: 1px solid #1f2029; font-size: 13px; }
+    .action-name { color: #e4e4e7; }
+    .action-subject { color: #71717a; font-size: 11px; }
+    .action-table select { width: auto; min-width: 100px; padding: 4px 8px; font-size: 12px; }
+    .override-badge { display: inline-block; font-size: 10px; color: #f59e0b; margin-left: 6px; }
+    .btn-build { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; background: #6366f1; color: #fff; transition: background 0.2s; }
+    .btn-build:hover { background: #4f46e5; }
+    .btn-build:disabled { background: #3730a3; cursor: not-allowed; opacity: 0.6; }
+    .btn-build .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .build-note { font-size: 11px; color: #52525b; text-align: center; margin-top: 8px; }
+    .log-container { background: #0a0a0f; border: 1px solid #1a1b23; border-radius: 8px; padding: 12px; height: 350px; overflow-y: auto; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.5; }
+    .log-line { padding: 1px 0; word-break: break-all; }
+    .log-line.info { color: #22c55e; } .log-line.warn { color: #eab308; } .log-line.error { color: #ef4444; }
+    .log-line.debug { color: #6b7280; } .log-line.status { color: #6366f1; } .log-line.system { color: #8b5cf6; }
+    .result-card { display: none; margin-top: 16px; }
+    .result-card.show { display: block; }
+    .result-success { border-color: #22c55e; } .result-fail { border-color: #ef4444; }
+    .result-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .result-header .icon { font-size: 20px; } .result-header .title { font-size: 16px; font-weight: 600; }
+    .result-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .result-item { background: #0f1117; padding: 10px 12px; border-radius: 6px; }
+    .result-item .rl { font-size: 10px; text-transform: uppercase; color: #6b7280; margin-bottom: 3px; }
+    .result-item .rv { font-size: 14px; font-weight: 600; color: #fff; }
+    .result-item .rv a { color: #6366f1; text-decoration: none; } .result-item .rv a:hover { text-decoration: underline; }
+    .result-item.full { grid-column: 1 / -1; }
+    .settings-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .settings-tag { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: #1a2e1a; color: #22c55e; border: 1px solid #22c55e33; }
+    .settings-tag.warning { background: #2e2a1a; color: #eab308; border-color: #eab30833; }
+    .flow-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .flow-tag { background: #2a2b35; padding: 3px 8px; border-radius: 4px; font-size: 11px; color: #a1a1aa; }
+
+    /* Email Content Editor Styles */
+    .email-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+    .email-tab { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; background: #0f1117; border: 1px solid #2a2b35; color: #71717a; transition: all 0.25s ease; white-space: nowrap; position: relative; }
+    .email-tab:hover { border-color: #3a3b45; color: #e4e4e7; background: #151620; transform: translateY(-1px); }
+    .email-tab.active { border-color: #6366f1; background: linear-gradient(135deg, #151620, #1a1040); color: #e4e4e7; box-shadow: 0 0 12px rgba(99,102,241,0.15); }
+    .email-tab .content-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #22c55e; margin-left: 8px; vertical-align: middle; box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+    .email-tab .section-count { font-size: 10px; color: #52525b; margin-left: 4px; }
+    .email-tab.active .section-count { color: #6366f1; }
+
+    .section-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; max-height: 450px; overflow-y: auto; padding-right: 4px; }
+    .section-list::-webkit-scrollbar { width: 4px; }
+    .section-list::-webkit-scrollbar-track { background: transparent; }
+    .section-list::-webkit-scrollbar-thumb { background: #2a2b35; border-radius: 4px; }
+    .section-list::-webkit-scrollbar-thumb:hover { background: #3a3b45; }
+
+    .section-item { background: #0f1117; border: 1px solid #2a2b35; border-radius: 10px; padding: 12px 14px; transition: all 0.2s ease; position: relative; }
+    .section-item:hover { border-color: #3a3b45; }
+    .section-item::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 0 3px 3px 0; }
+    .section-item.image-section::before { background: #60a5fa; }
+    .section-item.text-section::before { background: #22c55e; }
+    .section-item.button-section::before { background: #c084fc; }
+    .section-item.spacer-section::before { background: #3a3b45; }
+
+    .section-item-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .section-type-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px; }
+    .section-type-badge .badge-icon { font-size: 12px; }
+    .section-type-badge.image { background: #1e3a5f; color: #60a5fa; }
+    .section-type-badge.text { background: #1a2e1a; color: #22c55e; }
+    .section-type-badge.button { background: #2d1a3e; color: #c084fc; }
+    .section-type-badge.spacer { background: #1f2029; color: #52525b; }
+
+    .section-item input, .section-item textarea, .section-item select { margin-top: 6px; font-size: 12px; }
+    .section-item textarea { min-height: 60px; }
+    .section-item .mini-row { display: flex; gap: 8px; margin-top: 6px; }
+    .section-item .mini-row > * { flex: 1; }
+    .field-label { font-size: 10px; color: #52525b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 8px; margin-bottom: 2px; display: block; }
+    .field-label:first-child { margin-top: 0; }
+
+    .section-actions { display: flex; gap: 3px; }
+    .section-actions button { background: #1a1b23; border: 1px solid #2a2b35; border-radius: 5px; color: #52525b; cursor: pointer; padding: 4px 7px; font-size: 11px; transition: all 0.2s; line-height: 1; }
+    .section-actions button:hover { border-color: #6366f1; color: #e4e4e7; background: #151620; }
+    .section-actions button.del:hover { border-color: #ef4444; color: #ef4444; background: #1a1015; }
+
+    .add-section-row { display: flex; gap: 6px; margin-top: 4px; }
+    .add-section-btn { padding: 10px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px dashed #2a2b35; background: transparent; color: #52525b; transition: all 0.25s ease; flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .add-section-btn:hover { border-color: #6366f1; color: #e4e4e7; background: #0f1117; border-style: solid; }
+    .add-section-btn .add-icon { font-size: 14px; opacity: 0.6; }
+    .add-section-btn:hover .add-icon { opacity: 1; }
+
+    .preview-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #1a1b23, #151620); border: 1px solid #2a2b35; color: #a1a1aa; text-decoration: none; transition: all 0.25s ease; margin-top: 12px; }
+    .preview-btn:hover { border-color: #6366f1; color: #e4e4e7; box-shadow: 0 0 12px rgba(99,102,241,0.1); }
+    .preview-btn .preview-icon { font-size: 14px; }
+
+    .no-content-msg { font-size: 13px; color: #3a3b45; padding: 32px 20px; text-align: center; border: 1px dashed #2a2b35; border-radius: 10px; background: #0a0a0f; line-height: 1.6; }
+    .no-content-msg strong { color: #52525b; display: block; margin-bottom: 4px; }
+
+    /* Image Upload */
+    .upload-row { display: flex; gap: 8px; align-items: center; }
+    .upload-row input[type="url"] { flex: 1; }
+    .upload-btn { flex-shrink: 0; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #6366f1, #4f46e5); border: none; color: #fff; transition: all 0.25s ease; white-space: nowrap; box-shadow: 0 2px 8px rgba(99,102,241,0.25); }
+    .upload-btn:hover { background: linear-gradient(135deg, #4f46e5, #4338ca); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+    .upload-btn:disabled { background: #3730a3; cursor: not-allowed; opacity: 0.6; transform: none; box-shadow: none; }
+    .upload-btn .spin { display: inline-block; width: 10px; height: 10px; border: 2px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 4px; }
+    .upload-status { font-size: 11px; margin-top: 4px; padding: 4px 8px; border-radius: 4px; }
+    .upload-status.success { color: #22c55e; background: #0a1a0a; border: 1px solid #22c55e22; }
+    .upload-status.error { color: #ef4444; background: #1a0a0a; border: 1px solid #ef444422; }
+    .img-thumb { margin-top: 8px; max-width: 100%; max-height: 100px; border-radius: 6px; border: 1px solid #2a2b35; object-fit: cover; display: block; }
+
+    /* Color input preview */
+    .color-field { display: flex; align-items: center; gap: 6px; }
+    .color-preview { width: 24px; height: 24px; border-radius: 4px; border: 1px solid #2a2b35; flex-shrink: 0; }
+
+    /* Upload dropzone */
+    .upload-dropzone { border: 2px dashed #2a2b35; border-radius: 10px; padding: 24px 16px; text-align: center; cursor: pointer; transition: all 0.25s ease; background: #0a0a0f; }
+    .upload-dropzone:hover { border-color: #6366f1; background: #0f1020; }
+    .dropzone-icon { font-size: 28px; margin-bottom: 6px; opacity: 0.5; }
+    .upload-dropzone:hover .dropzone-icon { opacity: 1; }
+    .dropzone-text { font-size: 13px; font-weight: 600; color: #a1a1aa; }
+    .upload-dropzone:hover .dropzone-text { color: #e4e4e7; }
+    .dropzone-hint { font-size: 11px; color: #3a3b45; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Klaviyo Flow Builder</h1>
+    <span class="badge">ZHS Ecom</span>
+  </div>
+
+  <div class="layout">
+    <div>
+      <!-- Flow Info -->
+      <div class="card">
+        <h2>Abandoned Cart Flow</h2>
+        <div class="flow-tags">
+          <span class="flow-tag">list trigger</span>
+          <span class="flow-tag">Email List</span>
+          <span class="flow-tag">8 actions</span>
+        </div>
+      </div>
+
+      <!-- Feature 1 & 2: Smart Sending + UTM Tracking -->
+      <div class="card">
+        <h2>Message Settings</h2>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Smart Sending</div><div class="toggle-desc">Skip profiles who received an email recently</div></div>
+          <label class="toggle"><input type="checkbox" id="smartSending" checked onchange="rebuildTable()"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <div><div class="toggle-label">UTM Tracking</div><div class="toggle-desc">Add UTM parameters to links for Google Analytics</div></div>
+          <label class="toggle"><input type="checkbox" id="utmTracking" checked onchange="rebuildTable()"><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <!-- Feature 3: Profile Filter -->
+      <div class="card">
+        <h2>Profile Filter</h2>
+        <div class="toggle-row">
+          <div><div class="toggle-label">Require Marketing Consent</div><div class="toggle-desc">Only allow profiles with consent to enter the flow</div></div>
+          <label class="toggle"><input type="checkbox" id="profileFilterEnabled" onchange="toggleProfileFilter()"><span class="slider"></span></label>
+        </div>
+        <div id="profileFilterConfig" style="display:none;padding:8px 0">
+          <label>Consent Channel</label>
+          <select id="profileFilterType">
+            <option value="email-consent">Email marketing consent</option>
+            <option value="sms-consent">SMS marketing consent</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Feature 4: Re-entry -->
+      <div class="card">
+        <h2>Re-entry</h2>
+        <div class="radio-group">
+          <label class="radio-option" onclick="selectReentry('none')">
+            <input type="radio" name="reentry" value="none" checked>
+            <div><div class="radio-text">Not configured</div><div class="radio-desc">Use Klaviyo's default.</div></div>
+          </label>
+          <label class="radio-option selected" onclick="selectReentry('multiple')">
+            <input type="radio" name="reentry" value="multiple" checked>
+            <div><div class="radio-text">Multiple times</div><div class="radio-desc">Re-enter every trigger. Good for abandoned cart.</div></div>
+          </label>
+          <label class="radio-option" onclick="selectReentry('once')">
+            <input type="radio" name="reentry" value="once">
+            <div><div class="radio-text">Once only</div><div class="radio-desc">Enter one time, ever. Good for welcome series.</div></div>
+          </label>
+          <label class="radio-option" onclick="selectReentry('time-based')">
+            <input type="radio" name="reentry" value="time-based">
+            <div>
+              <div class="radio-text">Time-based</div><div class="radio-desc">Re-enter after a cooldown period.</div>
+              <div class="time-inputs">
+                <input type="number" id="reentryValue" value="30" min="1" style="width:70px">
+                <select id="reentryUnit"><option value="hours">hours</option><option value="days" selected>days</option><option value="weeks">weeks</option></select>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Per-Action Overrides -->
+      <div class="card">
+        <h2>Per-Action Overrides</h2>
+        <div id="actionOverrides"></div>
+      </div>
+
+      <!-- Email Content Editor -->
+      <div class="card">
+        <h2>Email Content (Sliced Images)</h2>
+        <div id="emailTabs" class="email-tabs"></div>
+        <div id="emailContentEditor"></div>
+      </div>
+
+      <button id="buildBtn" class="btn-build" onclick="startBuild()">Build Flow</button>
+      <div class="build-note">Creates the flow in Draft with email content applied. Review in Klaviyo before going Live.</div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>Live Output</h2>
+        <div id="logContainer" class="log-container">
+          <div class="log-line system">Ready. Configure settings and click Build Flow.</div>
+        </div>
+      </div>
+      <div id="resultCard" class="card result-card">
+        <div id="resultHeader" class="result-header"></div>
+        <div id="resultGrid" class="result-grid"></div>
+        <div id="settingsSummary" class="settings-summary"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const FLOW_FILE = 'abandoned-cart.json';
+let eventSource = null;
+let flowDef = null;
+let activeEmailTab = null;
+
+// ── Load the flow definition ──
+async function init() {
+  try {
+    const res = await fetch('/api/flows/' + FLOW_FILE);
+    flowDef = await res.json();
+    rebuildTable();
+    rebuildEmailTabs();
+  } catch (e) {
+    log('error', 'Failed to load flow: ' + e.message);
+  }
+}
+
+// ── Toggle helpers ──
+function toggleProfileFilter() {
+  document.getElementById('profileFilterConfig').style.display =
+    document.getElementById('profileFilterEnabled').checked ? 'block' : 'none';
+}
+
+function selectReentry(mode) {
+  document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
+  const radio = document.querySelector('input[name="reentry"][value="' + mode + '"]');
+  if (radio) { radio.checked = true; radio.closest('.radio-option').classList.add('selected'); }
+}
+
+// ── Per-action overrides table ──
+function rebuildTable() {
+  if (!flowDef) return;
+  const container = document.getElementById('actionOverrides');
+  const emails = flowDef.actions.filter(a => a.type === 'send-email' || a.type === 'send-sms');
+  const flowSmart = document.getElementById('smartSending').checked;
+  const flowUtm = document.getElementById('utmTracking').checked;
+
+  let html = '<table class="action-table"><thead><tr><th>Action</th><th>Smart Sending</th><th>UTM Tracking</th></tr></thead><tbody>';
+  for (const a of emails) {
+    const icon = a.type === 'send-email' ? '&#9993;' : '&#128172;';
+    const smartVal = a.smart_sending !== undefined ? (a.smart_sending ? 'on' : 'off') : 'inherit';
+    const utmVal = a.utm_tracking !== undefined ? (a.utm_tracking ? 'on' : 'off') : 'inherit';
+    html += '<tr><td><div class="action-name">' + icon + ' ' + a.name + '</div>' +
+      (a.subject_line ? '<div class="action-subject">' + a.subject_line + '</div>' : '') + '</td>' +
+      '<td><select data-id="' + a.id + '" data-field="smart_sending">' +
+        '<option value="inherit"' + (smartVal === 'inherit' ? ' selected' : '') + '>Inherit (' + (flowSmart ? 'ON' : 'OFF') + ')</option>' +
+        '<option value="on"' + (smartVal === 'on' ? ' selected' : '') + '>ON</option>' +
+        '<option value="off"' + (smartVal === 'off' ? ' selected' : '') + '>OFF</option></select></td>' +
+      '<td><select data-id="' + a.id + '" data-field="utm_tracking">' +
+        '<option value="inherit"' + (utmVal === 'inherit' ? ' selected' : '') + '>Inherit (' + (flowUtm ? 'ON' : 'OFF') + ')</option>' +
+        '<option value="on"' + (utmVal === 'on' ? ' selected' : '') + '>ON</option>' +
+        '<option value="off"' + (utmVal === 'off' ? ' selected' : '') + '>OFF</option></select></td></tr>';
+  }
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ── Email Content Editor ──
+function rebuildEmailTabs() {
+  if (!flowDef) return;
+  const tabsContainer = document.getElementById('emailTabs');
+  const emails = flowDef.actions.filter(a => a.type === 'send-email');
+
+  let html = '';
+  for (const email of emails) {
+    const hasContent = email.content && email.content.sections && email.content.sections.length > 0;
+    const count = hasContent ? email.content.sections.length : 0;
+    html += '<div class="email-tab' + (activeEmailTab === email.id ? ' active' : '') + '" onclick="selectEmailTab(\'' + email.id + '\')">'
+      + email.name
+      + (hasContent ? '<span class="content-dot"></span>' : '')
+      + (count > 0 ? '<span class="section-count">(' + count + ')</span>' : '')
+      + '</div>';
+  }
+  tabsContainer.innerHTML = html;
+
+  if (!activeEmailTab && emails.length > 0) {
+    selectEmailTab(emails[0].id);
+  } else if (activeEmailTab) {
+    renderEmailContent(activeEmailTab);
+  }
+}
+
+function selectEmailTab(emailId) {
+  activeEmailTab = emailId;
+  document.querySelectorAll('.email-tab').forEach(t => t.classList.remove('active'));
+  const tabs = document.querySelectorAll('.email-tab');
+  const emails = flowDef.actions.filter(a => a.type === 'send-email');
+  const idx = emails.findIndex(e => e.id === emailId);
+  if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
+  renderEmailContent(emailId);
+}
+
+function renderEmailContent(emailId) {
+  const container = document.getElementById('emailContentEditor');
+  const email = flowDef.actions.find(a => a.id === emailId);
+  if (!email) { container.innerHTML = ''; return; }
+
+  if (!email.content) {
+    email.content = { sections: [], background_color: '#ffffff', width: 600 };
+  }
+
+  const sections = email.content.sections || [];
+  let html = '';
+
+  if (sections.length === 0) {
+    html += '<div class="no-content-msg"><strong>No content sections yet</strong>Add sliced images, live text blocks, and CTA buttons to build this email.</div>';
+  }
+
+  html += '<div class="section-list">';
+  for (let i = 0; i < sections.length; i++) {
+    const s = sections[i];
+    html += renderSectionEditor(emailId, i, s);
+  }
+  html += '</div>';
+
+  // Add section buttons
+  html += '<div class="add-section-row">';
+  html += '<button class="add-section-btn" onclick="addSection(\'' + emailId + '\', \'image\')"><span class="add-icon">&#128247;</span> Image</button>';
+  html += '<button class="add-section-btn" onclick="addSection(\'' + emailId + '\', \'text\')"><span class="add-icon">&#9998;</span> Text</button>';
+  html += '<button class="add-section-btn" onclick="addSection(\'' + emailId + '\', \'button\')"><span class="add-icon">&#9654;</span> Button</button>';
+  html += '<button class="add-section-btn" onclick="addSection(\'' + emailId + '\', \'spacer\')"><span class="add-icon">&#8597;</span> Spacer</button>';
+  html += '</div>';
+
+  // Preview button (POSTs current UI content to server)
+  if (sections.length > 0) {
+    html += '<button class="preview-btn" onclick="previewEmail(\'' + emailId + '\')"><span class="preview-icon">&#128065;</span> Preview Email</button>';
+  }
+
+  container.innerHTML = html;
+}
+
+function renderSectionEditor(emailId, idx, section) {
+  const icons = { image: '&#128247;', text: '&#9998;', button: '&#9654;', spacer: '&#8597;' };
+  const labels = { image: 'Image Slice', text: 'Text Block', button: 'CTA Button', spacer: 'Spacer' };
+
+  let html = '<div class="section-item ' + section.type + '-section">';
+  html += '<div class="section-item-header">';
+  html += '<span class="section-type-badge ' + section.type + '"><span class="badge-icon">' + (icons[section.type] || '') + '</span> ' + (labels[section.type] || section.type) + '</span>';
+  html += '<div class="section-actions">';
+  if (idx > 0) html += '<button title="Move up" onclick="moveSection(\'' + emailId + '\',' + idx + ',-1)">&#9650;</button>';
+  if (idx < (getEmailSections(emailId).length - 1)) html += '<button title="Move down" onclick="moveSection(\'' + emailId + '\',' + idx + ',1)">&#9660;</button>';
+  html += '<button class="del" title="Remove" onclick="removeSection(\'' + emailId + '\',' + idx + ')">&#10005;</button>';
+  html += '</div></div>';
+
+  if (section.type === 'image') {
+    if (section.src) {
+      html += '<img src="' + esc(section.src) + '" class="img-thumb" onerror="this.style.display=\'none\'" />';
+      html += '<div class="upload-row" style="margin-top:8px">';
+      html += '<button class="upload-btn" id="upload-btn-' + emailId + '-' + idx + '" onclick="uploadImage(\'' + emailId + '\',' + idx + ')" style="flex:1">Replace Image</button>';
+      html += '</div>';
+    } else {
+      html += '<div class="upload-dropzone" onclick="uploadImage(\'' + emailId + '\',' + idx + ')">';
+      html += '<div class="dropzone-icon">&#128247;</div>';
+      html += '<div class="dropzone-text">Click to upload image</div>';
+      html += '<div class="dropzone-hint">JPG, PNG or GIF &mdash; max 5MB</div>';
+      html += '</div>';
+    }
+    html += '<input type="file" id="file-input-' + emailId + '-' + idx + '" accept="image/jpeg,image/png,image/gif" style="display:none" onchange="handleFileSelect(\'' + emailId + '\',' + idx + ',this)" />';
+    html += '<input type="hidden" id="img-url-' + emailId + '-' + idx + '" value="' + esc(section.src || '') + '" />';
+    html += '<div id="upload-status-' + emailId + '-' + idx + '" class="upload-status"></div>';
+    html += '<div class="mini-row">';
+    html += '<div><span class="field-label">Alt text</span><input type="text" placeholder="Describe the image" value="' + esc(section.alt || '') + '" onchange="updateSection(\'' + emailId + '\',' + idx + ',\'alt\',this.value)" /></div>';
+    html += '<div><span class="field-label">Click-through URL</span><input type="url" placeholder="https:// (optional)" value="' + esc(section.link || '') + '" onchange="updateSection(\'' + emailId + '\',' + idx + ',\'link\',this.value)" /></div>';
+    html += '</div>';
+
+  } else if (section.type === 'text') {
+    // Parse existing HTML into structured fields
+    var parsed = parseTextHtml(section.html || '');
+    html += '<span class="field-label">Headline</span>';
+    html += '<input type="text" placeholder="Your headline here" value="' + esc(parsed.headline) + '" onchange="rebuildTextHtml(\'' + emailId + '\',' + idx + ')" data-role="headline" />';
+    html += '<span class="field-label">Body text</span>';
+    html += '<textarea rows="2" placeholder="Supporting copy goes here..." onchange="rebuildTextHtml(\'' + emailId + '\',' + idx + ')" data-role="body">' + esc(parsed.body) + '</textarea>';
+    html += '<div class="mini-row">';
+    html += '<div><span class="field-label">Headline color</span><div class="color-field"><span class="color-preview" style="background:' + esc(parsed.headlineColor) + '"></span><input type="text" value="' + esc(parsed.headlineColor) + '" onchange="rebuildTextHtml(\'' + emailId + '\',' + idx + ');this.previousElementSibling.style.background=this.value" data-role="headlineColor" style="max-width:100px" /></div></div>';
+    html += '<div><span class="field-label">Body color</span><div class="color-field"><span class="color-preview" style="background:' + esc(parsed.bodyColor) + '"></span><input type="text" value="' + esc(parsed.bodyColor) + '" onchange="rebuildTextHtml(\'' + emailId + '\',' + idx + ');this.previousElementSibling.style.background=this.value" data-role="bodyColor" style="max-width:100px" /></div></div>';
+    html += '<div><span class="field-label">Headline size</span><select onchange="rebuildTextHtml(\'' + emailId + '\',' + idx + ')" data-role="headlineSize">'
+      + '<option value="22"' + (parsed.headlineSize === '22' ? ' selected' : '') + '>Small (22px)</option>'
+      + '<option value="26"' + (parsed.headlineSize === '26' ? ' selected' : '') + '>Medium (26px)</option>'
+      + '<option value="28"' + (parsed.headlineSize === '28' || !parsed.headlineSize ? ' selected' : '') + '>Large (28px)</option>'
+      + '<option value="34"' + (parsed.headlineSize === '34' ? ' selected' : '') + '>XL (34px)</option>'
+      + '</select></div>';
+    html += '</div>';
+    html += '<span class="field-label">Alignment</span>';
+    html += '<select onchange="updateSection(\'' + emailId + '\',' + idx + ',\'align\',this.value)" style="margin-top:4px">'
+      + '<option value="center"' + (section.align === 'center' || !section.align ? ' selected' : '') + '>Center</option>'
+      + '<option value="left"' + (section.align === 'left' ? ' selected' : '') + '>Left</option>'
+      + '<option value="right"' + (section.align === 'right' ? ' selected' : '') + '>Right</option>'
+      + '</select>';
+
+  } else if (section.type === 'button') {
+    html += '<div class="mini-row">';
+    html += '<div><span class="field-label">Button text</span><input type="text" placeholder="Shop Now" value="' + esc(section.text || '') + '" onchange="updateSection(\'' + emailId + '\',' + idx + ',\'text\',this.value)" /></div>';
+    html += '<div><span class="field-label">Button URL</span><input type="url" placeholder="https://yourstore.com" value="' + esc(section.url || '') + '" onchange="updateSection(\'' + emailId + '\',' + idx + ',\'url\',this.value)" /></div>';
+    html += '</div>';
+    html += '<div class="mini-row">';
+    html += '<div><span class="field-label">Background</span><div class="color-field"><span class="color-preview" style="background:' + esc(section.background || '#000000') + '"></span><input type="text" value="' + esc(section.background || '#000000') + '" onchange="updateSection(\'' + emailId + '\',' + idx + ',\'background\',this.value);this.previousElementSibling.style.background=this.value" style="max-width:100px" /></div></div>';
+    html += '<div><span class="field-label">Text color</span><div class="color-field"><span class="color-preview" style="background:' + esc(section.color || '#ffffff') + '"></span><input type="text" value="' + esc(section.color || '#ffffff') + '" onchange="updateSection(\'' + emailId + '\',' + idx + ',\'color\',this.value);this.previousElementSibling.style.background=this.value" style="max-width:100px" /></div></div>';
+    html += '</div>';
+
+  } else if (section.type === 'spacer') {
+    html += '<span class="field-label">Height (px)</span>';
+    html += '<input type="number" placeholder="20" value="' + (section.height || 20) + '" min="1" onchange="updateSection(\'' + emailId + '\',' + idx + ',\'height\',parseInt(this.value))" style="max-width:100px" />';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function getEmailSections(emailId) {
+  const email = flowDef.actions.find(a => a.id === emailId);
+  return email && email.content ? email.content.sections : [];
+}
+
+function addSection(emailId, type) {
+  const email = flowDef.actions.find(a => a.id === emailId);
+  if (!email) return;
+  if (!email.content) email.content = { sections: [], background_color: '#ffffff', width: 600 };
+
+  const defaults = {
+    image: { type: 'image', src: '', alt: '', link: '', width: 600 },
+    text: { type: 'text', html: '', align: 'center', padding: 20 },
+    button: { type: 'button', text: 'Click Here', url: '', background: '#000000', color: '#ffffff', border_radius: 6, padding: 20 },
+    spacer: { type: 'spacer', height: 20 },
+  };
+
+  email.content.sections.push({ ...defaults[type] });
+  renderEmailContent(emailId);
+  rebuildEmailTabs();
+}
+
+function removeSection(emailId, idx) {
+  const email = flowDef.actions.find(a => a.id === emailId);
+  if (email && email.content) {
+    email.content.sections.splice(idx, 1);
+    renderEmailContent(emailId);
+    rebuildEmailTabs();
+  }
+}
+
+function moveSection(emailId, idx, direction) {
+  const email = flowDef.actions.find(a => a.id === emailId);
+  if (!email || !email.content) return;
+  const sections = email.content.sections;
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= sections.length) return;
+  [sections[idx], sections[newIdx]] = [sections[newIdx], sections[idx]];
+  renderEmailContent(emailId);
+}
+
+// ── Text Block Parser — converts raw HTML to structured fields and back ──
+function parseTextHtml(html) {
+  var result = { headline: '', body: '', headlineColor: '#1a1b23', bodyColor: '#555555', headlineSize: '28' };
+  if (!html) return result;
+
+  // Try to extract headline from <h1> or <h2>
+  var hMatch = html.match(/<h[12][^>]*>([^<]*)<\/h[12]>/i);
+  if (hMatch) result.headline = hMatch[1].trim();
+
+  // Extract headline color
+  var hColorMatch = html.match(/<h[12][^>]*style="[^"]*color:\s*([^;"]+)/i);
+  if (hColorMatch) result.headlineColor = hColorMatch[1].trim();
+
+  // Extract headline size
+  var hSizeMatch = html.match(/<h[12][^>]*style="[^"]*font-size:\s*(\d+)/i);
+  if (hSizeMatch) result.headlineSize = hSizeMatch[1].trim();
+
+  // Try to extract body from <p> tags
+  var pMatch = html.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+  if (pMatch) result.body = pMatch[1].replace(/<[^>]+>/g, '').trim();
+
+  // Extract body color
+  var pColorMatch = html.match(/<p[^>]*style="[^"]*color:\s*([^;"]+)/i);
+  if (pColorMatch) result.bodyColor = pColorMatch[1].trim();
+
+  // If no tags found, treat entire text as body
+  if (!result.headline && !result.body) {
+    result.body = html.replace(/<[^>]+>/g, '').trim();
+  }
+
+  return result;
+}
+
+function rebuildTextHtml(emailId, idx) {
+  // Find the section-item container for this section
+  var items = document.querySelectorAll('.section-item.text-section');
+  var container = null;
+  // Find by iterating all text sections and matching index
+  var allSections = document.querySelectorAll('.section-item');
+  var textIdx = 0;
+  for (var i = 0; i < allSections.length; i++) {
+    if (allSections[i].classList.contains('text-section')) {
+      // Count text sections from the current email tab content
+      var sectionItems = allSections[i].querySelectorAll('[data-role]');
+      if (sectionItems.length > 0) {
+        // Check if this is the right one by matching to our idx
+        var headlineInput = allSections[i].querySelector('[data-role="headline"]');
+        if (headlineInput) {
+          container = allSections[i];
+          break;
+        }
+      }
+    }
+  }
+
+  // Simpler approach: find all [data-role] inputs in the email content editor
+  var editor = document.getElementById('emailContentEditor');
+  var sectionEls = editor.querySelectorAll('.section-item');
+  if (sectionEls[idx]) {
+    container = sectionEls[idx];
+  }
+
+  if (!container) return;
+
+  var headline = (container.querySelector('[data-role="headline"]') || {}).value || '';
+  var body = (container.querySelector('[data-role="body"]') || {}).value || '';
+  var headlineColor = (container.querySelector('[data-role="headlineColor"]') || {}).value || '#1a1b23';
+  var bodyColor = (container.querySelector('[data-role="bodyColor"]') || {}).value || '#555555';
+  var headlineSize = (container.querySelector('[data-role="headlineSize"]') || {}).value || '28';
+
+  // Build clean HTML from the fields
+  var parts = [];
+  if (headline) {
+    parts.push('<h1 style="font-size:' + headlineSize + 'px;font-weight:700;color:' + headlineColor + ';margin:0 0 10px 0;">' + headline + '</h1>');
+  }
+  if (body) {
+    parts.push('<p style="font-size:16px;color:' + bodyColor + ';margin:0;line-height:1.6;">' + body + '</p>');
+  }
+
+  var finalHtml = parts.join('');
+  updateSection(emailId, idx, 'html', finalHtml);
+}
+
+function updateSection(emailId, idx, field, value) {
+  const email = flowDef.actions.find(a => a.id === emailId);
+  if (email && email.content && email.content.sections[idx]) {
+    email.content.sections[idx][field] = value;
+  }
+}
+
+// ── Image Upload ──
+function uploadImage(emailId, idx) {
+  // Trigger the hidden file input
+  const fileInput = document.getElementById('file-input-' + emailId + '-' + idx);
+  if (fileInput) fileInput.click();
+}
+
+async function handleFileSelect(emailId, idx, input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const btn = document.getElementById('upload-btn-' + emailId + '-' + idx);
+  const status = document.getElementById('upload-status-' + emailId + '-' + idx);
+  const urlInput = document.getElementById('img-url-' + emailId + '-' + idx);
+
+  // Validate file
+  if (file.size > 5 * 1024 * 1024) {
+    status.className = 'upload-status error';
+    status.textContent = 'File too large (max 5MB). Compress it first.';
+    return;
+  }
+
+  // Show loading state
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Uploading...'; }
+  if (status) { status.className = 'upload-status'; status.textContent = 'Uploading ' + file.name + ' to Klaviyo...'; }
+  log('status', 'Uploading image: ' + file.name + ' (' + formatBytes(file.size) + ')...');
+
+  // If dropzone is visible, show loading state on it
+  var dropzone = document.querySelector('.section-item:nth-child(' + (parseInt(idx)+1) + ') .upload-dropzone');
+  if (dropzone) { dropzone.innerHTML = '<div class="dropzone-icon"><span class="spin" style="display:inline-block;width:18px;height:18px;border:2px solid #6366f1;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></span></div><div class="dropzone-text">Uploading...</div><div class="dropzone-hint">' + file.name + '</div>'; }
+
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const res = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      // Populate the URL in the data model
+      if (urlInput) urlInput.value = data.url;
+      updateSection(emailId, idx, 'src', data.url);
+
+      // Log to Live Output with compression stats
+      if (data.saved && data.saved > 0) {
+        log('info', 'Compressed: ' + formatBytes(data.originalSize) + ' → ' + formatBytes(data.compressedSize) + ' (' + data.saved + '% saved)');
+      }
+      log('info', 'Image uploaded: ' + data.name + ' (' + formatBytes(data.size) + ')');
+      log('info', 'Klaviyo URL: ' + data.url);
+
+      // Refresh the section to show the thumbnail (replaces dropzone)
+      renderEmailContent(emailId);
+    } else {
+      if (status) { status.className = 'upload-status error'; status.textContent = data.error || 'Upload failed.'; }
+      log('error', 'Image upload failed: ' + (data.error || 'Unknown error'));
+      // Re-render to reset dropzone state
+      renderEmailContent(emailId);
+    }
+  } catch (err) {
+    log('error', 'Image upload failed: ' + err.message);
+    // Re-render to reset dropzone state
+    renderEmailContent(emailId);
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = 'Upload'; }
+  // Reset the file input so the same file can be re-selected
+  input.value = '';
+}
+
+// ── Email Preview ──
+async function previewEmail(emailId) {
+  const email = flowDef.actions.find(a => a.id === emailId);
+  if (!email || !email.content || !email.content.sections || email.content.sections.length === 0) {
+    alert('No content sections to preview. Add some image, text, or button blocks first.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: email.content }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert('Preview failed: ' + (err.error || 'Unknown error'));
+      return;
+    }
+
+    // Get the HTML and open it in a new tab
+    const html = await res.text();
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  } catch (err) {
+    alert('Preview failed: ' + err.message);
+  }
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Collect all settings and build ──
+function collectOverrides() {
+  const o = {};
+  o.smart_sending = document.getElementById('smartSending').checked;
+  o.utm_tracking = document.getElementById('utmTracking').checked;
+
+  // Profile filter
+  o.profile_filter_enabled = document.getElementById('profileFilterEnabled').checked;
+  if (o.profile_filter_enabled) o.profile_filter_type = document.getElementById('profileFilterType').value;
+
+  // Re-entry
+  o.reentry_mode = document.querySelector('input[name="reentry"]:checked')?.value || 'none';
+  if (o.reentry_mode === 'time-based') {
+    o.reentry_value = parseInt(document.getElementById('reentryValue').value) || 30;
+    o.reentry_unit = document.getElementById('reentryUnit').value;
+  }
+
+  // Per-action
+  const actionOverrides = {};
+  document.querySelectorAll('.action-table select').forEach(sel => {
+    const id = sel.dataset.id; const field = sel.dataset.field;
+    if (sel.value !== 'inherit') {
+      if (!actionOverrides[id]) actionOverrides[id] = {};
+      actionOverrides[id][field] = sel.value === 'on';
+    }
+  });
+  if (Object.keys(actionOverrides).length > 0) o.action_overrides = actionOverrides;
+
+  return o;
+}
+
+// ── Build ──
+async function startBuild() {
+  const btn = document.getElementById('buildBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Building...';
+  clearLogs(); hideResult();
+  log('system', 'Building Abandoned Cart Flow...');
+
+  // Count emails with content
+  const emailsWithContent = flowDef.actions.filter(a => a.type === 'send-email' && a.content && a.content.sections && a.content.sections.length > 0);
+  if (emailsWithContent.length > 0) {
+    log('system', emailsWithContent.length + ' email(s) have content defined. Templates will be applied after flow creation.');
+  }
+
+  try {
+    const res = await fetch('/api/build', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        flowFile: FLOW_FILE,
+        mode: 'api',
+        settingsOverrides: collectOverrides(),
+        definition: flowDef
+      }),
+    });
+    const { buildId } = await res.json();
+    log('system', 'Build started. Streaming logs...');
+    connectSSE(buildId);
+  } catch (e) {
+    log('error', 'Failed: ' + e.message);
+    btn.disabled = false; btn.innerHTML = 'Build Flow';
+  }
+}
+
+// ── SSE ──
+function connectSSE(buildId) {
+  if (eventSource) eventSource.close();
+  eventSource = new EventSource('/api/logs/' + buildId);
+  eventSource.onmessage = function(event) {
+    const d = JSON.parse(event.data);
+    if (d.type === 'log') log(d.level, d.message);
+    else if (d.type === 'status') log('status', d.message);
+    else if (d.type === 'error') log('error', d.message);
+    else if (d.type === 'complete') {
+      showResult(d);
+      eventSource.close();
+      document.getElementById('buildBtn').disabled = false;
+      document.getElementById('buildBtn').innerHTML = 'Build Flow';
+    }
+  };
+}
+
+function log(level, msg) {
+  const c = document.getElementById('logContainer');
+  const l = document.createElement('div');
+  l.className = 'log-line ' + level;
+  l.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  c.appendChild(l); c.scrollTop = c.scrollHeight;
+}
+function clearLogs() { document.getElementById('logContainer').innerHTML = ''; }
+
+function showResult(r) {
+  const card = document.getElementById('resultCard');
+  card.className = 'card result-card show ' + (r.success ? 'result-success' : 'result-fail');
+  document.getElementById('resultHeader').innerHTML = r.success
+    ? '<span class="icon" style="color:#22c55e">&#10003;</span><span class="title" style="color:#22c55e">BUILD SUCCESS</span>'
+    : '<span class="icon" style="color:#ef4444">&#10007;</span><span class="title" style="color:#ef4444">BUILD FAILED</span>';
+  let h = '<div class="result-item"><div class="rl">Flow</div><div class="rv">' + (r.flowName||'') + '</div></div>' +
+    '<div class="result-item"><div class="rl">Duration</div><div class="rv">' + (r.duration?(r.duration/1000).toFixed(1)+'s':'') + '</div></div>' +
+    '<div class="result-item"><div class="rl">Actions</div><div class="rv">' + (r.actionsCreated||0) + '</div></div>';
+  if (r.templatesApplied) h += '<div class="result-item"><div class="rl">Templates</div><div class="rv">' + r.templatesApplied + ' applied</div></div>';
+  if (r.imagesUploaded) h += '<div class="result-item"><div class="rl">Images</div><div class="rv">' + r.imagesUploaded + ' uploaded</div></div>';
+  if (r.flowUrl) h += '<div class="result-item full"><div class="rl">Open in Klaviyo</div><div class="rv"><a href="'+r.flowUrl+'" target="_blank">'+r.flowUrl+'</a></div></div>';
+  if (r.errors?.length) h += '<div class="result-item full"><div class="rl">Errors</div><div class="rv" style="color:#ef4444;font-size:12px">'+r.errors.join('<br>')+'</div></div>';
+  if (r.warnings?.length) h += '<div class="result-item full"><div class="rl">Warnings</div><div class="rv" style="color:#eab308;font-size:12px">'+r.warnings.join('<br>')+'</div></div>';
+  document.getElementById('resultGrid').innerHTML = h;
+  document.getElementById('settingsSummary').innerHTML = r.settingsApplied ? Object.entries(r.settingsApplied).map(function(e) {
+    return '<span class="settings-tag'+(e[1].includes('pending')||e[1].includes('manual')?' warning':'')+'">'+e[0]+': '+e[1]+'</span>';
+  }).join('') : '';
+}
+function hideResult() { document.getElementById('resultCard').className = 'card result-card'; }
+
+init();
+</script>
+</body>
+</html>

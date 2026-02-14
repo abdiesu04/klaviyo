@@ -1,0 +1,259 @@
+{
+  "name": "Abandoned Cart Flow",
+  "trigger": {
+    "type": "list",
+    "list_name": "Email List"
+  },
+  "settings": {
+    "smart_sending": true,
+    "utm_tracking": true,
+    "reentry": { "mode": "multiple" }
+  },
+  "entry_action_id": "delay-1",
+  "profile_filter": null,
+  "tags": ["automated", "abandoned-cart"],
+  "actions": [
+    {
+      "id": "delay-1",
+      "type": "time-delay",
+      "delay_value": 4,
+      "delay_unit": "hours",
+      "next": "email-1"
+    },
+    {
+      "id": "email-1",
+      "type": "send-email",
+      "name": "Abandoned Cart Email #1",
+      "subject_line": "You left something behind...",
+      "preview_text": "Your cart is waiting for you",
+      "smart_sending": false,
+      "next": "delay-2",
+      "content": {
+        "background_color": "#ffffff",
+        "width": 600,
+        "sections": [
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Store header",
+            "link": "",
+            "width": 600
+          },
+          {
+            "type": "spacer",
+            "height": 10
+          },
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Hero image",
+            "link": "",
+            "width": 600
+          },
+          {
+            "type": "text",
+            "html": "<h1 style=\"font-size:28px;font-weight:700;color:#1a1b23;margin:0 0 10px 0;\">You left something behind</h1><p style=\"font-size:16px;color:#555555;margin:0;line-height:1.6;\">Looks like you forgot to check out. No worries — your cart is saved and ready when you are.</p>",
+            "align": "center",
+            "padding": 30
+          },
+          {
+            "type": "button",
+            "text": "Complete Your Purchase",
+            "url": "https://yourstore.com/cart",
+            "background": "#1a1b23",
+            "color": "#ffffff",
+            "border_radius": 6,
+            "padding": 20
+          },
+          {
+            "type": "spacer",
+            "height": 10
+          },
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Product block",
+            "link": "",
+            "width": 600
+          },
+          {
+            "type": "text",
+            "html": "<p style=\"font-size:14px;color:#999999;margin:0;\">Need help? Just reply to this email — we're here for you.</p>",
+            "align": "center",
+            "padding": 20
+          },
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Footer",
+            "link": "",
+            "width": 600
+          }
+        ]
+      }
+    },
+    {
+      "id": "delay-2",
+      "type": "time-delay",
+      "delay_value": 1,
+      "delay_unit": "days",
+      "next": "split-1"
+    },
+    {
+      "id": "split-1",
+      "type": "conditional-split",
+      "condition_type": "has-opened-email",
+      "condition_label": "Has Opened Email #1",
+      "condition_config": {
+        "timeframe": {
+          "type": "relative",
+          "value": 2,
+          "unit": "days"
+        }
+      },
+      "next_if_true": "email-2-opened",
+      "next_if_false": "email-2-not-opened"
+    },
+    {
+      "id": "email-2-opened",
+      "type": "send-email",
+      "name": "Abandoned Cart Email #2 (Opened)",
+      "subject_line": "Still thinking about it?",
+      "preview_text": "Here's a little nudge",
+      "content": {
+        "sections": [
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Store header",
+            "link": "",
+            "width": 600
+          },
+          {
+            "type": "text",
+            "html": "<h1 style=\"font-size:26px;font-weight:700;color:#1a1b23;margin:0 0 10px 0;\">Still thinking about it?</h1><p style=\"font-size:16px;color:#555555;margin:0;line-height:1.6;\">We noticed you checked out your cart. Your items are still available — grab them before they're gone.</p>",
+            "align": "center",
+            "padding": 30
+          },
+          {
+            "type": "button",
+            "text": "Return to Cart",
+            "url": "https://yourstore.com/cart",
+            "background": "#22c55e",
+            "color": "#ffffff",
+            "border_radius": 6,
+            "padding": 20
+          },
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Footer",
+            "link": "",
+            "width": 600
+          }
+        ]
+      }
+    },
+    {
+      "id": "email-2-not-opened",
+      "type": "send-email",
+      "name": "Abandoned Cart Email #2 (Not Opened)",
+      "subject_line": "Don't miss out!",
+      "preview_text": "Your cart items are selling fast",
+      "next": "delay-3",
+      "content": {
+        "sections": [
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Store header",
+            "link": "",
+            "width": 600
+          },
+          {
+            "type": "text",
+            "html": "<h1 style=\"font-size:26px;font-weight:700;color:#1a1b23;margin:0 0 10px 0;\">Don't miss out!</h1><p style=\"font-size:16px;color:#555555;margin:0;line-height:1.6;\">Your cart items are selling fast. Complete your purchase before they're gone.</p>",
+            "align": "center",
+            "padding": 30
+          },
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Product block",
+            "link": "",
+            "width": 600
+          },
+          {
+            "type": "button",
+            "text": "Complete Your Purchase",
+            "url": "https://yourstore.com/cart",
+            "background": "#ef4444",
+            "color": "#ffffff",
+            "border_radius": 6,
+            "padding": 20
+          },
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Footer",
+            "link": "",
+            "width": 600
+          }
+        ]
+      }
+    },
+    {
+      "id": "delay-3",
+      "type": "time-delay",
+      "delay_value": 1,
+      "delay_unit": "days",
+      "next": "email-3"
+    },
+    {
+      "id": "email-3",
+      "type": "send-email",
+      "name": "Abandoned Cart Email #3 (Final)",
+      "subject_line": "Last chance — your cart expires soon",
+      "preview_text": "Complete your purchase before it's too late",
+      "content": {
+        "sections": [
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Store header",
+            "link": "",
+            "width": 600
+          },
+          {
+            "type": "text",
+            "html": "<h1 style=\"font-size:26px;font-weight:700;color:#ef4444;margin:0 0 10px 0;\">Last chance!</h1><p style=\"font-size:16px;color:#555555;margin:0;line-height:1.6;\">Your cart expires soon. This is your final reminder — don't let these items slip away.</p>",
+            "align": "center",
+            "padding": 30
+          },
+          {
+            "type": "button",
+            "text": "Checkout Now",
+            "url": "https://yourstore.com/cart",
+            "background": "#1a1b23",
+            "color": "#ffffff",
+            "border_radius": 6,
+            "padding": 20
+          },
+          {
+            "type": "text",
+            "html": "<p style=\"font-size:13px;color:#999999;margin:0;\">Need help? Reply to this email or contact us at support@yourstore.com</p>",
+            "align": "center",
+            "padding": 20
+          },
+          {
+            "type": "image",
+            "src": "",
+            "alt": "Footer",
+            "link": "",
+            "width": 600
+          }
+        ]
+      }
+    }
+  ]
+}

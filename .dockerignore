@@ -1,0 +1,7 @@
+node_modules
+dist
+uploads
+screenshots
+.klaviyo-session.json
+.env
+*.log
