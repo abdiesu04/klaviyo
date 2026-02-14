@@ -29,7 +29,7 @@ export function loadConfig(overrides?: Partial<AppConfig>): AppConfig {
     apiRevision: process.env.KLAVIYO_API_REVISION || '2024-10-15.pre',
     email: process.env.KLAVIYO_EMAIL || '',
     password: process.env.KLAVIYO_PASSWORD || '',
-    headless: process.env.HEADLESS !== 'false',
+    headless: process.env.NODE_ENV === 'production' ? true : process.env.HEADLESS !== 'false',
     slowMo: parseInt(process.env.SLOW_MO || '0', 10),
     screenshotDir: process.env.SCREENSHOT_DIR || './screenshots',
     logLevel: process.env.LOG_LEVEL || 'info',
