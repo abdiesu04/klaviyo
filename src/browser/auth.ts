@@ -91,7 +91,7 @@ export class KlaviyoAuth {
 
     // On production (no display), skip login — can't solve CAPTCHA on a server
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('No saved session available. Run the tool locally first to log in and create a session, then redeploy.');
+      throw new Error('Re-entry config skipped (server environment). Set it manually: Open flow → Click Trigger → Re-entry criteria → Save.');
     }
 
     this.log.info('Opening visible browser for login (reCAPTCHA requires manual solve)...');

@@ -274,8 +274,8 @@ app.post('/api/build', async (req, res) => {
                 result.settingsApplied['Re-entry'] = re.mode + (re.mode === 'time-based' ? ` (${re.value} ${re.unit})` : '');
               }
             } else if (needsReentry) {
-              sendSSE(buildId, 'log', { level: 'warn', message: 'Re-entry could not be set automatically. Configure manually.' });
-              result.warnings.push('Re-entry needs manual configuration in Klaviyo.');
+              sendSSE(buildId, 'log', { level: 'warn', message: 'Re-entry could not be set automatically.' });
+              result.warnings.push('To set re-entry: Open flow in Klaviyo → Click the Trigger → Scroll to "Re-entry criteria" → Select your option → Save. Takes 10 seconds.');
             }
 
             if (configResult.profileFilterSet) {
@@ -301,7 +301,7 @@ app.post('/api/build', async (req, res) => {
           }
         } else {
           sendSSE(buildId, 'log', { level: 'warn', message: 'Browser config requires KLAVIYO_EMAIL/PASSWORD in .env.' });
-          if (needsReentry) result.warnings.push('Re-entry needs manual configuration (no browser credentials).');
+          if (needsReentry) result.warnings.push('To set re-entry: Open flow in Klaviyo → Click the Trigger → Scroll to "Re-entry criteria" → Select your option → Save. Takes 10 seconds.');
           if (needsProfileFilter) result.warnings.push('Profile filter needs manual configuration (no browser credentials).');
         }
       }
